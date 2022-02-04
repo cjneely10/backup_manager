@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate lazy_static;
 
 use crate::copy_directions::from_string_list;
 use crate::executor::execute;
@@ -7,7 +9,9 @@ use crate::executor::execute;
 mod copy_directions;
 mod executor;
 mod file_ops;
+mod test_utils;
 
+#[cfg(not(tarpaulin_include))]
 fn main() -> std::io::Result<()> {
     let matches = clap_app!(backup_manager =>
         (version: "0.1.0")

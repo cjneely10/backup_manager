@@ -17,6 +17,7 @@ where
     U: AsRef<Path> + std::hash::Hash + std::cmp::Eq,
     V: AsRef<Path>,
 {
+    assert_ne!(from.as_ref(), to.as_ref());
     assert!(from.as_ref().exists(), "Input directory not found");
     assert!(from.as_ref().is_dir(), "Input path is not a directory");
     let mut file_count = 0;
@@ -86,36 +87,23 @@ where
 
 #[cfg(test)]
 mod test {
-    use std::path::PathBuf;
-
     use async_std::task;
 
     use crate::file_ops::copy;
-
-    struct Cleanup;
-
-    impl Drop for Cleanup {
-        fn drop(&mut self) {
-            std::fs::remove_dir_all("dest").unwrap();
-        }
-    }
+    use crate::test_utils::TestConfig;
 
     #[test]
     #[should_panic]
     fn copy_src_does_not_exist() {
-        let _c = Cleanup;
-        let src = PathBuf::from("s");
-        let dest = PathBuf::from("dest");
-        let _ = task::spawn(copy(src, dest, None));
+        let c = TestConfig::new("desta", Some("ffsdfa"));
+        task::spawn(copy(c.get_src(), c.get_dest(), None));
     }
 
     #[test]
     fn to_empty_dir() {
-        let _c = Cleanup;
-        let src = PathBuf::from("src");
-        let num_files = src.read_dir().unwrap().count();
-        let dest = PathBuf::from("dest");
-        let handle = task::spawn(copy(src, dest, None));
+        let c = TestConfig::new("destb", None);
+        let num_files = c.get_src().read_dir().unwrap().count();
+        let handle = task::spawn(copy(c.get_src(), c.get_dest(), None));
         let copied = task::block_on(handle);
         assert_eq!(copied.unwrap(), num_files);
     }
