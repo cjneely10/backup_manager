@@ -106,7 +106,7 @@ mod test {
         let _c = Cleanup;
         let src = PathBuf::from("s");
         let dest = PathBuf::from("dest");
-        let handle = task::spawn(copy(src, dest, None));
+        let _ = task::spawn(copy(src, dest, None));
     }
 
     #[test]

@@ -1,11 +1,9 @@
-use async_std::path::PathBuf;
-use async_std::task::{block_on, spawn};
 use std::io::Result;
+
+use async_std::task::{block_on, spawn};
 
 use crate::copy_directions::CopyDirections;
 use crate::file_ops::copy;
-
-pub(crate) type PathBufTuple = (PathBuf, PathBuf);
 
 async fn run(directions: CopyDirections) -> Result<()> {
     let mut handles = Vec::new();

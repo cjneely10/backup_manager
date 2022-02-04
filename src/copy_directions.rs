@@ -9,7 +9,7 @@ pub(crate) type SkipExt = HashSet<Vec<u8>>;
 pub(crate) type Config = (ToPath, SkipExt);
 pub(crate) type CopyDirections = HashMap<FromPath, Config>;
 
-pub(crate) fn from_string_list(data: &[Vec<u8>]) -> Result<CopyDirections> {
+pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections> {
     let mut out = HashMap::new();
     data.iter().for_each(|directions| {
         let mut direction = directions.split(|v| *v == b':');
@@ -87,7 +87,7 @@ mod test {
     #[test]
     fn simple() {
         let copy_directions = vec![format!("{}:{}", PRE, POST).as_bytes().to_vec()];
-        let parsed_directions = from_string_list(&copy_directions).unwrap();
+        let parsed_directions = from_string_list(copy_directions).unwrap();
         let pre = &to(PRE);
         let post = &to(POST);
         assert!(parsed_directions.contains_key(pre));
@@ -98,7 +98,7 @@ mod test {
     #[test]
     fn with_args() {
         let copy_directions = vec![format!("{}:{}:{}", PRE, POST, ARGS).as_bytes().to_vec()];
-        let parsed_directions = from_string_list(&copy_directions).unwrap();
+        let parsed_directions = from_string_list(copy_directions).unwrap();
         let pre = &to(PRE);
         let post = &to(POST);
         assert!(parsed_directions.contains_key(pre));
