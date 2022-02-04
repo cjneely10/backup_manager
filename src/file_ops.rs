@@ -6,23 +6,25 @@ use async_std::fs;
 use async_std::path::PathBuf;
 use async_std::stream::StreamExt;
 
-use crate::config::SkipExt;
+use crate::copy_directions::SkipExt;
 
 /// Recursively clone directory
 ///
 /// Impl derived(copied) from
 /// <https://stackoverflow.com/questions/26958489/how-to-copy-a-folder-recursively-in-rust>
-pub(crate) async fn copy<U, V>(from: U, to: V, skip_set: Option<&SkipExt>) -> Result<usize>
+pub(crate) async fn copy<U, V>(from: U, to: V, skip_set: Option<SkipExt>) -> Result<usize>
 where
     U: AsRef<Path> + std::hash::Hash + std::cmp::Eq,
     V: AsRef<Path>,
 {
+    assert!(from.as_ref().exists(), "Input directory not found");
+    assert!(from.as_ref().is_dir(), "Input path is not a directory");
     let mut file_count = 0;
     let mut stack = vec![PathBuf::from(from.as_ref())];
     let empty = SkipExt::new();
     let skip_set = match skip_set {
         Some(s) => s,
-        None => &empty,
+        None => empty,
     };
 
     let output_root = PathBuf::from(to.as_ref());
@@ -84,9 +86,11 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::utils::copy;
-    use async_std::task;
     use std::path::PathBuf;
+
+    use async_std::task;
+
+    use crate::file_ops::copy;
 
     struct Cleanup;
 
@@ -97,12 +101,22 @@ mod test {
     }
 
     #[test]
-    fn copy_empty() {
+    #[should_panic]
+    fn copy_src_does_not_exist() {
+        let _c = Cleanup;
+        let src = PathBuf::from("s");
+        let dest = PathBuf::from("dest");
+        let handle = task::spawn(copy(src, dest, None));
+    }
+
+    #[test]
+    fn to_empty_dir() {
         let _c = Cleanup;
         let src = PathBuf::from("src");
+        let num_files = src.read_dir().unwrap().count();
         let dest = PathBuf::from("dest");
         let handle = task::spawn(copy(src, dest, None));
         let copied = task::block_on(handle);
-        assert_eq!(copied.unwrap(), 3);
+        assert_eq!(copied.unwrap(), num_files);
     }
 }
