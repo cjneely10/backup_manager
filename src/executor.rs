@@ -8,12 +8,12 @@ use crate::file_ops::copy;
 async fn run(directions: CopyDirections) -> Result<usize> {
     let mut handles = Vec::new();
     let mut total = 0;
-    for (to_path, cfg) in directions {
-        let skip_set = match cfg.1.len() {
+    for (paths, cfg) in directions {
+        let skip_set = match cfg.len() {
             0 => None,
-            _ => Some(cfg.1),
+            _ => Some(cfg),
         };
-        handles.push(spawn(copy(to_path, cfg.0, skip_set)));
+        handles.push(spawn(copy(paths.0, paths.1, skip_set)));
     }
     for handle in handles {
         total += handle.await.unwrap();

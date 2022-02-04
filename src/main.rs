@@ -5,6 +5,8 @@ extern crate lazy_static;
 
 use crate::copy_directions::from_string_list;
 use crate::executor::execute;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 mod copy_directions;
 mod executor;
@@ -17,17 +19,19 @@ fn main() -> std::io::Result<()> {
         (version: "0.1.0")
         (author: "Chris N. <christopher.neely1200@gmail.com>")
         (about: "Quick file copier")
-        (@arg COMMAND: --command -c +takes_value +required "Command in format 'FROM:TO:[skip_ext[,...]]'")
+        (@arg INPUT_FILE: -i --input_file +takes_value +required "File with command lines in format 'FROM:TO:[skip_ext[,...]]'")
     )
     .get_matches();
 
-    let files = matches
-        .values_of("COMMAND")
-        .unwrap()
-        .into_iter()
+    let file = matches.value_of("INPUT_FILE").unwrap();
+    let reader = BufReader::new(File::open(file).expect("Unable to locate input file!"));
+    let command_strings = reader
+        .lines()
+        .map(|l| l.unwrap())
         .map(|v| v.as_bytes().to_vec())
+        .filter(|v| !v.is_empty())
         .collect();
-    let command_list = from_string_list(files).unwrap();
+    let command_list = from_string_list(command_strings).unwrap();
     execute(command_list)?;
 
     Ok(())

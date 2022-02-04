@@ -6,8 +6,7 @@ pub(crate) type FromPath = PathBuf;
 pub(crate) type ToPath = PathBuf;
 pub(crate) type SkipExt = HashSet<Vec<u8>>;
 
-pub(crate) type Config = (ToPath, SkipExt);
-pub(crate) type CopyDirections = HashMap<FromPath, Config>;
+pub(crate) type CopyDirections = HashMap<(FromPath, ToPath), SkipExt>;
 
 pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections> {
     let mut out = HashMap::new();
@@ -47,7 +46,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections> {
                 .into_iter()
                 .collect();
         }
-        out.insert(from_path, (to_path, skip_exts));
+        out.insert((from_path, to_path), skip_exts);
     });
 
     Ok(out)
@@ -90,9 +89,9 @@ mod test {
         let parsed_directions = from_string_list(copy_directions).unwrap();
         let pre = &to(PRE);
         let post = &to(POST);
-        assert!(parsed_directions.contains_key(pre));
-        assert_eq!(&parsed_directions.get(pre).unwrap().0, post);
-        assert!(parsed_directions.get(pre).unwrap().1.is_empty());
+        let id = &(pre.clone(), post.clone());
+        assert!(parsed_directions.contains_key(id));
+        assert!(parsed_directions.get(id).unwrap().is_empty());
     }
 
     #[test]
@@ -101,9 +100,9 @@ mod test {
         let parsed_directions = from_string_list(copy_directions).unwrap();
         let pre = &to(PRE);
         let post = &to(POST);
-        assert!(parsed_directions.contains_key(pre));
-        assert_eq!(&parsed_directions.get(pre).unwrap().0, post);
-        let args = parsed_directions.get(pre).unwrap().1.clone();
+        let id = &(pre.clone(), post.clone());
+        assert!(parsed_directions.contains_key(id));
+        let args = parsed_directions.get(id).unwrap().clone();
         let mut expected = HashSet::new();
         expected.insert("ttt".as_bytes().to_vec());
         expected.insert("txt".as_bytes().to_vec());

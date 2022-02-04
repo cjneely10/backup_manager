@@ -24,11 +24,11 @@ impl TestConfig {
         match src {
             Some(s) => Self {
                 src: PathBuf::from(s),
-                dest: PathBuf::from(dest),
+                dest,
             },
             None => Self {
                 src: SRC.clone(),
-                dest: PathBuf::from(dest),
+                dest,
             },
         }
     }
