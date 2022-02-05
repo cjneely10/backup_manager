@@ -62,9 +62,11 @@ where
                     } else {
                         match path.file_name() {
                             Some(filename) => {
-                                let ext = path.extension().unwrap().as_bytes();
-                                if skip_set.contains(ext) {
-                                    continue;
+                                let ext = path.extension();
+                                if let Some(ext) = ext {
+                                    if skip_set.contains(ext.as_bytes()) {
+                                        continue;
+                                    }
                                 }
                                 let dest_path = dest.join(filename);
                                 println!("  copy: {:?} -> {:?}", &path, &dest_path);
