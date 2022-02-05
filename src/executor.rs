@@ -35,7 +35,7 @@ pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Result<Summa
 
 #[cfg(test)]
 mod test {
-    use crate::test_utils::TestConfig;
+    use crate::test_utils::test_config::TestConfig;
     use crate::{execute, from_string_list};
 
     #[test]

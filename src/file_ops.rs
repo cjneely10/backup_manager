@@ -99,49 +99,7 @@ where
                     if path.is_dir().await {
                         stack.push(path);
                     } else {
-                        match path.file_name() {
-                            Some(filename) => {
-                                let ext = path.extension();
-                                if let Some(ext) = ext {
-                                    if skip_set.contains(ext.as_bytes()) {
-                                        continue;
-                                    }
-                                }
-                                let dest_path = dest.join(filename);
-                                match dest_path.exists().await {
-                                    true => {
-                                        if dest_path.metadata().await?.modified()?
-                                            < path.metadata().await?.modified()?
-                                        {
-                                            update_file(
-                                                &path,
-                                                &dest_path,
-                                                "update",
-                                                &mut summary.modified,
-                                                &mut summary.errors,
-                                                verbose,
-                                            )
-                                            .await;
-                                        }
-                                    }
-                                    false => {
-                                        update_file(
-                                            &path,
-                                            &dest_path,
-                                            "copy",
-                                            &mut summary.copied,
-                                            &mut summary.errors,
-                                            verbose,
-                                        )
-                                        .await;
-                                    }
-                                }
-                            }
-                            None => {
-                                println!("failed: {:?}", path);
-                                summary.errors += 1;
-                            }
-                        }
+                        process_file(&mut summary, &path, &dest, &skip_set, verbose).await?;
                         summary.total += 1;
                     }
                 }
@@ -149,6 +107,59 @@ where
         }
     }
     Ok(summary)
+}
+
+async fn process_file(
+    summary: &mut Summary,
+    path: &PathBuf,
+    dest: &PathBuf,
+    skip_set: &SkipExt,
+    verbose: bool,
+) -> Result<()> {
+    match path.file_name() {
+        Some(filename) => {
+            let ext = path.extension();
+            if let Some(ext) = ext {
+                if skip_set.contains(ext.as_bytes()) {
+                    return Ok(());
+                }
+            }
+            let dest_path = dest.join(filename);
+            match dest_path.exists().await {
+                true => {
+                    if dest_path.metadata().await?.modified()?
+                        < path.metadata().await?.modified()?
+                    {
+                        update_file(
+                            path,
+                            &dest_path,
+                            "update",
+                            &mut summary.modified,
+                            &mut summary.errors,
+                            verbose,
+                        )
+                        .await;
+                    }
+                }
+                false => {
+                    update_file(
+                        path,
+                        &dest_path,
+                        "copy",
+                        &mut summary.copied,
+                        &mut summary.errors,
+                        verbose,
+                    )
+                    .await;
+                }
+            }
+        }
+        None => {
+            println!("failed: {:?}", path);
+            summary.errors += 1;
+        }
+    }
+    Ok(())
 }
 
 async fn update_file(
@@ -182,7 +193,7 @@ mod test {
     use async_std::task;
 
     use crate::file_ops::copy;
-    use crate::test_utils::TestConfig;
+    use crate::test_utils::test_config::TestConfig;
 
     #[test]
     #[should_panic]
