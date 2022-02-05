@@ -14,6 +14,7 @@ pub(crate) struct FileParseError {
 
 pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, FileParseError> {
     let mut out = HashMap::new();
+    let mut claimed_out_dirs: HashMap<PathBuf, PathBuf> = HashMap::new();
     for directions in data {
         let mut direction = directions.split(|v| *v == b':');
         let from_path: PathBuf;
@@ -26,7 +27,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
             None => {
                 return Err(FileParseError {
                     message: format!(
-                        "Unable to parse `from_path` in string {}",
+                        "Unable to parse `from_path` in string \"{}\"",
                         String::from_utf8(directions.clone()).unwrap()
                     ),
                 });
@@ -39,10 +40,24 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
             None => {
                 return Err(FileParseError {
                     message: format!(
-                        "Unable to parse `to_path` in string {}",
+                        "Unable to parse `to_path` in string \"{}\"",
                         String::from_utf8(directions.clone()).unwrap()
                     ),
                 });
+            }
+        }
+        match claimed_out_dirs.contains_key(&to_path) {
+            true => {
+                return Err(FileParseError {
+                    message: format!(
+                        "`to_path` value \"{}\" is already in use for \"{}\"",
+                        to_path.to_str().unwrap(),
+                        claimed_out_dirs[&to_path].to_str().unwrap()
+                    ),
+                });
+            }
+            false => {
+                claimed_out_dirs.insert(to_path.clone(), from_path.clone());
             }
         }
         if let Some(direction) = direction.next() {
