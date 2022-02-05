@@ -1,11 +1,9 @@
-use std::io::Result;
-
 use async_std::task::{block_on, spawn};
 
 use crate::copy_directions::CopyDirections;
 use crate::file_ops::{copy, Summary};
 
-async fn run(directions: CopyDirections, verbose: bool) -> Result<Summary> {
+async fn run(directions: CopyDirections, verbose: bool) -> Summary {
     let mut handles = Vec::new();
     let mut total = Summary::default();
     for (paths, cfg) in directions {
@@ -25,11 +23,11 @@ async fn run(directions: CopyDirections, verbose: bool) -> Result<Summary> {
             }
         }
     }
-    Ok(total)
+    total
 }
 
 /// Initialize copier pool for each direction tuple and begin copy process
-pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Result<Summary> {
+pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Summary {
     block_on(run(directions, verbose))
 }
 
@@ -53,6 +51,6 @@ mod test {
             .unwrap(),
             true,
         );
-        assert_eq!(copied.unwrap().copied, num_files);
+        assert_eq!(copied.copied, num_files);
     }
 }

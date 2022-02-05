@@ -52,12 +52,5 @@ fn main() {
             exit(2);
         }
     };
-    match execute(command_list, verbose) {
-        Ok(summary) => {
-            println!("{:?}", summary);
-        }
-        Err(err) => {
-            eprintln!("{:?}", err);
-        }
-    }
+    println!("{:?}", execute(command_list, verbose));
 }
