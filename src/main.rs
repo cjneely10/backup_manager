@@ -3,11 +3,12 @@ extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 
-use crate::copy_directions::from_string_list;
-use crate::executor::execute;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::process::exit;
+
+use crate::copy_directions::from_string_list;
+use crate::executor::execute;
 
 mod copy_directions;
 mod executor;
@@ -21,9 +22,11 @@ fn main() {
         (author: "Chris N. <christopher.neely1200@gmail.com>")
         (about: "Quick file copier")
         (@arg INPUT_FILE: -i --input_file +takes_value +required "File with command lines in format 'FROM:TO:[skip_ext[,...]]'")
+        (@arg VERBOSE: -v --verbose "Display files copied")
     )
     .get_matches();
 
+    let verbose = matches.is_present("VERBOSE");
     let file = matches.value_of("INPUT_FILE").unwrap();
     let file = File::open(file);
     let file = match file {
@@ -48,7 +51,7 @@ fn main() {
             exit(2);
         }
     };
-    match execute(command_list) {
+    match execute(command_list, verbose) {
         Ok(num_copied) => {
             println!("Copied {} files", num_copied);
         }

@@ -12,7 +12,12 @@ use crate::copy_directions::SkipExt;
 ///
 /// Impl derived(copied) from
 /// <https://stackoverflow.com/questions/26958489/how-to-copy-a-folder-recursively-in-rust>
-pub(crate) async fn copy<U, V>(from: U, to: V, skip_set: Option<SkipExt>) -> Result<usize>
+pub(crate) async fn copy<U, V>(
+    from: U,
+    to: V,
+    skip_set: Option<SkipExt>,
+    verbose: bool,
+) -> Result<usize>
 where
     U: AsRef<Path> + std::hash::Hash + std::cmp::Eq,
     V: AsRef<Path>,
@@ -32,7 +37,21 @@ where
     let input_root = PathBuf::from(from.as_ref()).components().count();
 
     while let Some(working_path) = stack.pop() {
-        println!("process: {:?} -> {:?}", &working_path, output_root);
+        if verbose {
+            println!(
+                "process: {:?} -> {:?}",
+                working_path.to_str().unwrap(),
+                output_root
+                    .join(
+                        working_path
+                            .components()
+                            .skip(input_root)
+                            .collect::<PathBuf>()
+                    )
+                    .to_str()
+                    .unwrap()
+            );
+        }
 
         // Generate a relative path
         let src: PathBuf = working_path.components().skip(input_root).collect();
@@ -44,7 +63,9 @@ where
             output_root.join(&src)
         };
         if fs::metadata(&dest).await.is_err() {
-            println!(" mkdir: {:?}", dest);
+            if verbose {
+                println!(" mkdir: {:?}", dest.to_str().unwrap());
+            }
             fs::create_dir_all(&dest).await?;
         }
 
@@ -69,7 +90,13 @@ where
                                     }
                                 }
                                 let dest_path = dest.join(filename);
-                                println!("  copy: {:?} -> {:?}", &path, &dest_path);
+                                if verbose {
+                                    println!(
+                                        "  copy: {:?} -> {:?}",
+                                        path.to_str().unwrap(),
+                                        dest_path.to_str().unwrap()
+                                    );
+                                }
                                 file_count += 1;
                                 // TODO: Copy new or modified files and filter files not present
                                 fs::copy(&path, &dest_path).await?;
@@ -98,14 +125,14 @@ mod test {
     #[should_panic]
     fn copy_src_does_not_exist() {
         let c = TestConfig::new("desta", Some("ffsdfa"));
-        task::spawn(copy(c.get_src(), c.get_dest(), None));
+        task::spawn(copy(c.get_src(), c.get_dest(), None, true));
     }
 
     #[test]
     fn to_empty_dir() {
         let c = TestConfig::new("destb", None);
         let num_files = c.get_src().read_dir().unwrap().count();
-        let handle = task::spawn(copy(c.get_src(), c.get_dest(), None));
+        let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
         let copied = task::block_on(handle);
         assert_eq!(copied.unwrap(), num_files);
     }
