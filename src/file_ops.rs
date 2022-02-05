@@ -173,7 +173,10 @@ async fn process_file(
 async fn file_copy_runner(from: PathBuf, to: PathBuf, id: &'static str) -> (&'static str, bool) {
     match fs::copy(from, to).await {
         Ok(_) => (id, true),
-        Err(_) => (id, false),
+        Err(e) => {
+            eprintln!("{}", e);
+            (id, false)
+        },
     }
 }
 
