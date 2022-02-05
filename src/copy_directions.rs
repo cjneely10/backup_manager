@@ -7,6 +7,7 @@ pub(crate) type SkipExt = HashSet<Vec<u8>>;
 
 pub(crate) type CopyDirections = HashMap<(FromPath, ToPath), SkipExt>;
 
+#[derive(Debug)]
 pub(crate) struct FileParseError {
     pub message: String,
 }

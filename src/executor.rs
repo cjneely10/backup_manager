@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::io::Result;
 
 use async_std::task::{block_on, spawn};
@@ -52,6 +51,7 @@ mod test {
             .as_bytes()
             .to_vec()])
             .unwrap(),
+            true,
         );
         assert_eq!(copied.unwrap(), num_files);
     }
