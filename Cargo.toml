@@ -6,6 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-std = "1.10.0"
 clap = "~2.27.0"
 lazy_static = "1.4.0"
+
+[dependencies.async-std]
+version = "1.10.0"
+features = ["unstable"]

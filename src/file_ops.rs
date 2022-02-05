@@ -6,8 +6,12 @@ use std::path::Path;
 use async_std::fs;
 use async_std::path::PathBuf;
 use async_std::stream::StreamExt;
+use async_std::task::{spawn_local, yield_now, JoinHandle};
 
 use crate::copy_directions::SkipExt;
+
+const COPY: &str = "copy";
+const MODIFY: &str = "update";
 
 #[derive(Debug, Default)]
 pub(crate) struct Summary {
@@ -54,6 +58,8 @@ where
     let output_root = PathBuf::from(to.as_ref());
     let input_root = PathBuf::from(from.as_ref()).components().count();
 
+    let mut handles = Vec::new();
+
     while let Some(working_path) = stack.pop() {
         if verbose {
             println!(
@@ -99,9 +105,26 @@ where
                     if path.is_dir().await {
                         stack.push(path);
                     } else {
-                        process_file(&mut summary, &path, &dest, &skip_set, verbose).await?;
+                        process_file(&mut summary, &path, &dest, &skip_set, verbose, &mut handles)
+                            .await?;
                     }
                 }
+            }
+        }
+    }
+    for handle in handles {
+        let (id, status) = handle.await;
+        if !status {
+            summary.errors += 1;
+        } else {
+            match id {
+                COPY => {
+                    summary.copied += 1;
+                }
+                MODIFY => {
+                    summary.modified += 1;
+                }
+                _ => unreachable!(),
             }
         }
     }
@@ -114,6 +137,7 @@ async fn process_file(
     dest: &PathBuf,
     skip_set: &SkipExt,
     verbose: bool,
+    handles: &mut Vec<JoinHandle<(&str, bool)>>,
 ) -> Result<()> {
     match path.file_name() {
         Some(filename) => {
@@ -129,32 +153,16 @@ async fn process_file(
                     if dest_path.metadata().await?.modified()?
                         < path.metadata().await?.modified()?
                     {
-                        update_file(
-                            path,
-                            &dest_path,
-                            "update",
-                            &mut summary.modified,
-                            &mut summary.errors,
-                            verbose,
-                        )
-                        .await;
+                        update_file(path, &dest_path, MODIFY, verbose, handles).await;
                     }
                 }
                 false => {
-                    update_file(
-                        path,
-                        &dest_path,
-                        "copy",
-                        &mut summary.copied,
-                        &mut summary.errors,
-                        verbose,
-                    )
-                    .await;
+                    update_file(path, &dest_path, COPY, verbose, handles).await;
                 }
             }
         }
         None => {
-            println!("failed: {:?}", path);
+            eprintln!("failed: {:?}", path);
             summary.errors += 1;
         }
     }
@@ -162,13 +170,19 @@ async fn process_file(
     Ok(())
 }
 
+async fn file_copy_runner(from: PathBuf, to: PathBuf, id: &'static str) -> (&'static str, bool) {
+    match fs::copy(from, to).await {
+        Ok(_) => (id, true),
+        Err(_) => (id, false),
+    }
+}
+
 async fn update_file(
     from: &PathBuf,
     to: &PathBuf,
-    id: &str,
-    accumulator: &mut usize,
-    err_accumulator: &mut usize,
+    id: &'static str,
     verbose: bool,
+    handles: &mut Vec<JoinHandle<(&str, bool)>>,
 ) {
     if verbose {
         println!(
@@ -178,14 +192,8 @@ async fn update_file(
             to.to_str().unwrap()
         );
     }
-    match fs::copy(from, to).await {
-        Ok(_) => {
-            *accumulator += 1;
-        }
-        Err(_) => {
-            *err_accumulator += 1;
-        }
-    }
+    handles.push(spawn_local(file_copy_runner(from.clone(), to.clone(), id)));
+    yield_now().await;
 }
 
 #[cfg(test)]
