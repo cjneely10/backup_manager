@@ -1,4 +1,5 @@
 use std::io::Result;
+use std::ops::AddAssign;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
@@ -7,6 +8,23 @@ use async_std::path::PathBuf;
 use async_std::stream::StreamExt;
 
 use crate::copy_directions::SkipExt;
+
+#[derive(Debug, Default)]
+pub(crate) struct Summary {
+    pub copied: usize,
+    pub errors: usize,
+    pub modified: usize,
+    pub total: usize,
+}
+
+impl AddAssign for Summary {
+    fn add_assign(&mut self, rhs: Self) {
+        self.copied += rhs.copied;
+        self.errors += rhs.errors;
+        self.modified += rhs.modified;
+        self.total += rhs.total;
+    }
+}
 
 /// Recursively clone directory
 ///
@@ -17,7 +35,7 @@ pub(crate) async fn copy<U, V>(
     to: V,
     skip_set: Option<SkipExt>,
     verbose: bool,
-) -> Result<usize>
+) -> Result<Summary>
 where
     U: AsRef<Path> + std::hash::Hash + std::cmp::Eq,
     V: AsRef<Path>,
@@ -25,13 +43,13 @@ where
     assert_ne!(from.as_ref(), to.as_ref());
     assert!(from.as_ref().exists(), "Input directory not found");
     assert!(from.as_ref().is_dir(), "Input path is not a directory");
-    let mut file_count = 0;
     let mut stack = vec![PathBuf::from(from.as_ref())];
     let empty = SkipExt::new();
     let skip_set = match skip_set {
         Some(s) => s,
         None => empty,
     };
+    let mut summary = Summary::default();
 
     let output_root = PathBuf::from(to.as_ref());
     let input_root = PathBuf::from(from.as_ref()).components().count();
@@ -90,28 +108,73 @@ where
                                     }
                                 }
                                 let dest_path = dest.join(filename);
-                                if verbose {
-                                    println!(
-                                        "  copy: {:?} -> {:?}",
-                                        path.to_str().unwrap(),
-                                        dest_path.to_str().unwrap()
-                                    );
+                                match dest_path.exists().await {
+                                    true => {
+                                        if dest_path.metadata().await?.modified()?
+                                            < path.metadata().await?.modified()?
+                                        {
+                                            update_file(
+                                                &path,
+                                                &dest_path,
+                                                "update",
+                                                &mut summary.modified,
+                                                &mut summary.errors,
+                                                verbose,
+                                            )
+                                            .await;
+                                        }
+                                    }
+                                    false => {
+                                        update_file(
+                                            &path,
+                                            &dest_path,
+                                            "copy",
+                                            &mut summary.copied,
+                                            &mut summary.errors,
+                                            verbose,
+                                        )
+                                        .await;
+                                    }
                                 }
-                                file_count += 1;
-                                // TODO: Copy new or modified files and filter files not present
-                                fs::copy(&path, &dest_path).await?;
                             }
                             None => {
                                 println!("failed: {:?}", path);
+                                summary.errors += 1;
                             }
                         }
+                        summary.total += 1;
                     }
                 }
             }
         }
     }
+    Ok(summary)
+}
 
-    Ok(file_count)
+async fn update_file(
+    from: &PathBuf,
+    to: &PathBuf,
+    id: &str,
+    accumulator: &mut usize,
+    err_accumulator: &mut usize,
+    verbose: bool,
+) {
+    if verbose {
+        println!(
+            "  {}: {:?} -> {:?}",
+            id,
+            from.to_str().unwrap(),
+            to.to_str().unwrap()
+        );
+    }
+    match fs::copy(from, to).await {
+        Ok(_) => {
+            *accumulator += 1;
+        }
+        Err(_) => {
+            *err_accumulator += 1;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -134,6 +197,6 @@ mod test {
         let num_files = c.get_src().read_dir().unwrap().count();
         let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
         let copied = task::block_on(handle);
-        assert_eq!(copied.unwrap(), num_files);
+        assert_eq!(copied.unwrap().copied, num_files);
     }
 }

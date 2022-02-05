@@ -52,8 +52,8 @@ fn main() {
         }
     };
     match execute(command_list, verbose) {
-        Ok(num_copied) => {
-            println!("Copied {} files", num_copied);
+        Ok(summary) => {
+            println!("{:?}", summary);
         }
         Err(err) => {
             eprintln!("{:?}", err);

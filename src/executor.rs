@@ -3,11 +3,11 @@ use std::io::Result;
 use async_std::task::{block_on, spawn};
 
 use crate::copy_directions::CopyDirections;
-use crate::file_ops::copy;
+use crate::file_ops::{copy, Summary};
 
-async fn run(directions: CopyDirections, verbose: bool) -> Result<usize> {
+async fn run(directions: CopyDirections, verbose: bool) -> Result<Summary> {
     let mut handles = Vec::new();
-    let mut total = 0;
+    let mut total = Summary::default();
     for (paths, cfg) in directions {
         let skip_set = match cfg.len() {
             0 => None,
@@ -21,7 +21,7 @@ async fn run(directions: CopyDirections, verbose: bool) -> Result<usize> {
                 total += count;
             }
             Err(e) => {
-                eprintln!("{}", e.to_string())
+                eprintln!("{}", e)
             }
         }
     }
@@ -29,7 +29,7 @@ async fn run(directions: CopyDirections, verbose: bool) -> Result<usize> {
 }
 
 /// Initialize copier pool for each direction tuple and begin copy process
-pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Result<usize> {
+pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Result<Summary> {
     block_on(run(directions, verbose))
 }
 
@@ -53,6 +53,6 @@ mod test {
             .unwrap(),
             true,
         );
-        assert_eq!(copied.unwrap(), num_files);
+        assert_eq!(copied.unwrap().copied, num_files);
     }
 }
