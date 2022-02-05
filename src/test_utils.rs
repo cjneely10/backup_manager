@@ -1,6 +1,7 @@
 #[cfg(test)]
 pub(crate) mod test_config {
     use std::path::PathBuf;
+
     lazy_static! {
         static ref SRC: PathBuf = PathBuf::from(PathBuf::from(file!()).parent().unwrap());
     }

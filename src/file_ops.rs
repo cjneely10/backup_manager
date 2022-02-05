@@ -209,5 +209,8 @@ mod test {
         let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
         let copied = task::block_on(handle);
         assert_eq!(copied.unwrap().copied, num_files);
+        let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
+        let copied = task::block_on(handle);
+        assert_eq!(copied.unwrap().copied, 0);
     }
 }
