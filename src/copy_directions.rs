@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::io::Result;
 use std::path::PathBuf;
 
 pub(crate) type FromPath = PathBuf;
@@ -8,9 +7,13 @@ pub(crate) type SkipExt = HashSet<Vec<u8>>;
 
 pub(crate) type CopyDirections = HashMap<(FromPath, ToPath), SkipExt>;
 
-pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections> {
+pub(crate) struct FileParseError {
+    pub message: String,
+}
+
+pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, FileParseError> {
     let mut out = HashMap::new();
-    data.iter().for_each(|directions| {
+    for directions in data {
         let mut direction = directions.split(|v| *v == b':');
         let from_path: PathBuf;
         let to_path: PathBuf;
@@ -19,25 +22,27 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections> {
             Some(direction) => {
                 from_path = PathBuf::from(&String::from_utf8(Vec::from(direction)).unwrap());
             }
-            None => panic!(
-                "{}",
-                format!(
-                    "Unable to parse `from_path` in string {}",
-                    String::from_utf8(directions.clone()).unwrap()
-                )
-            ),
+            None => {
+                return Err(FileParseError {
+                    message: format!(
+                        "Unable to parse `from_path` in string {}",
+                        String::from_utf8(directions.clone()).unwrap()
+                    ),
+                });
+            }
         }
         match direction.next() {
             Some(direction) => {
                 to_path = PathBuf::from(&String::from_utf8(Vec::from(direction)).unwrap());
             }
-            None => panic!(
-                "{}",
-                format!(
-                    "Unable to parse `to_path` in string {}",
-                    String::from_utf8(directions.clone()).unwrap()
-                )
-            ),
+            None => {
+                return Err(FileParseError {
+                    message: format!(
+                        "Unable to parse `to_path` in string {}",
+                        String::from_utf8(directions.clone()).unwrap()
+                    ),
+                });
+            }
         }
         if let Some(direction) = direction.next() {
             skip_exts = direction
@@ -47,7 +52,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections> {
                 .collect();
         }
         out.insert((from_path, to_path), skip_exts);
-    });
+    }
 
     Ok(out)
 }

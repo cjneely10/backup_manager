@@ -1,2 +1,5 @@
 src:dest
 src:dest2
+src:dest3:.rs
+sr
+s:dest

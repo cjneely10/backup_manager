@@ -32,7 +32,7 @@ where
     let input_root = PathBuf::from(from.as_ref()).components().count();
 
     while let Some(working_path) = stack.pop() {
-        println!("process: {:?}", &working_path);
+        println!("process: {:?} -> {:?}", &working_path, output_root);
 
         // Generate a relative path
         let src: PathBuf = working_path.components().skip(input_root).collect();

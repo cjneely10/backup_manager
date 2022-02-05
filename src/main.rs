@@ -7,6 +7,7 @@ use crate::copy_directions::from_string_list;
 use crate::executor::execute;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::process::exit;
 
 mod copy_directions;
 mod executor;
@@ -14,7 +15,7 @@ mod file_ops;
 mod test_utils;
 
 #[cfg(not(tarpaulin_include))]
-fn main() -> std::io::Result<()> {
+fn main() {
     let matches = clap_app!(backup_manager =>
         (version: "0.1.0")
         (author: "Chris N. <christopher.neely1200@gmail.com>")
@@ -24,15 +25,35 @@ fn main() -> std::io::Result<()> {
     .get_matches();
 
     let file = matches.value_of("INPUT_FILE").unwrap();
-    let reader = BufReader::new(File::open(file).expect("Unable to locate input file!"));
+    let file = File::open(file);
+    let file = match file {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Unable to parse file!");
+            eprintln!("{:?}", e);
+            exit(1);
+        }
+    };
+    let reader = BufReader::new(file);
     let command_strings = reader
         .lines()
         .map(|l| l.unwrap())
         .map(|v| v.as_bytes().to_vec())
         .filter(|v| !v.is_empty())
         .collect();
-    let command_list = from_string_list(command_strings).unwrap();
-    execute(command_list)?;
-
-    Ok(())
+    let command_list = match from_string_list(command_strings) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("{}", e.message);
+            exit(2);
+        }
+    };
+    match execute(command_list) {
+        Ok(num_copied) => {
+            println!("Copied {} files", num_copied);
+        }
+        Err(err) => {
+            eprintln!("{:?}", err);
+        }
+    }
 }
