@@ -100,7 +100,6 @@ where
                         stack.push(path);
                     } else {
                         process_file(&mut summary, &path, &dest, &skip_set, verbose).await?;
-                        summary.total += 1;
                     }
                 }
             }
@@ -120,7 +119,7 @@ async fn process_file(
         Some(filename) => {
             let ext = path.extension();
             if let Some(ext) = ext {
-                if skip_set.contains(ext.as_bytes()) {
+                if !skip_set.is_empty() && skip_set.contains(ext.as_bytes()) {
                     return Ok(());
                 }
             }
@@ -159,6 +158,7 @@ async fn process_file(
             summary.errors += 1;
         }
     }
+    summary.total += 1;
     Ok(())
 }
 
