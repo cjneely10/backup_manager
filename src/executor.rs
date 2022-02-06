@@ -51,7 +51,7 @@ mod test {
 
     #[test]
     fn copy_all() {
-        let c = TestConfig::new("destc", None);
+        let c = TestConfig::new("destea", None);
         let num_files = c.src.read_dir().unwrap().count();
         let copied = execute(
             from_string_list(vec![format!(
@@ -65,5 +65,22 @@ mod test {
             true,
         );
         assert_eq!(copied.new, num_files);
+    }
+
+    #[test]
+    fn copy_excluded() {
+        let c = TestConfig::new("desteb", None);
+        let copied = execute(
+            from_string_list(vec![format!(
+                "{}:{}:.rs",
+                c.src.to_str().unwrap(),
+                c.dest.to_str().unwrap()
+            )
+            .as_bytes()
+            .to_vec()])
+            .unwrap(),
+            true,
+        );
+        assert_eq!(copied.new, 0);
     }
 }

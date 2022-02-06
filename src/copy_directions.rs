@@ -25,6 +25,14 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
         match direction.next() {
             Some(direction) => {
                 from_path = PathBuf::from(&String::from_utf8(Vec::from(direction)).unwrap());
+                if !from_path.exists() {
+                    return Err(FileParseError {
+                        message: format!(
+                            "Unable to locate `from_path` \"{}\"",
+                            from_path.to_str().unwrap()
+                        ),
+                    });
+                }
             }
             None => {
                 return Err(FileParseError {
@@ -86,25 +94,34 @@ fn trim(v: &[u8]) -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod test {
-    use std::path::PathBuf;
-
     use crate::copy_directions::from_string_list;
-
-    static PRE: &str = "/home/user/pre";
-    static POST: &str = "/home/user/post";
-
-    fn to(val: &str) -> PathBuf {
-        PathBuf::from(val)
-    }
+    use crate::test_utils::test_config::TestConfig;
 
     #[test]
     fn simple() {
-        let copy_directions = vec![format!("{}:{}", PRE, POST).as_bytes().to_vec()];
+        let c = TestConfig::new("destca", None);
+        let copy_directions =
+            vec![
+                format!("{}:{}", c.src.to_str().unwrap(), c.dest.to_str().unwrap())
+                    .as_bytes()
+                    .to_vec(),
+            ];
         let parsed_directions = from_string_list(copy_directions).unwrap();
-        let pre = &to(PRE);
-        let post = &to(POST);
-        let id = &(pre.clone(), post.clone());
+        let id = &(c.get_src(), c.get_dest());
         assert!(parsed_directions.contains_key(id));
         assert!(parsed_directions.get(id).unwrap().is_empty());
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_from_path() {
+        let c = TestConfig::new("destcb", Some("asfdasdf"));
+        let copy_directions =
+            vec![
+                format!("{}:{}", c.src.to_str().unwrap(), c.dest.to_str().unwrap())
+                    .as_bytes()
+                    .to_vec(),
+            ];
+        from_string_list(copy_directions).unwrap();
     }
 }

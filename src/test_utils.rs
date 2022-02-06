@@ -38,7 +38,9 @@ pub(crate) mod test_config {
 
     impl Drop for TestConfig {
         fn drop(&mut self) {
-            std::fs::remove_dir_all(self.get_dest()).unwrap();
+            if self.dest.exists() {
+                std::fs::remove_dir_all(self.get_dest()).unwrap();
+            }
         }
     }
 }

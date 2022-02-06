@@ -170,6 +170,7 @@ async fn update_file(
 #[cfg(test)]
 mod test {
     use async_std::task;
+    use async_std::task::block_on;
 
     use crate::file_ops::copy;
     use crate::test_utils::test_config::TestConfig;
@@ -177,13 +178,13 @@ mod test {
     #[test]
     #[should_panic]
     fn copy_src_does_not_exist() {
-        let c = TestConfig::new("desta", Some("ffsdfa"));
-        task::spawn(copy(c.get_src(), c.get_dest(), None, true));
+        let c = TestConfig::new("destfa", Some("ffsdfa"));
+        block_on(task::spawn(copy(c.get_src(), c.get_dest(), None, true))).unwrap();
     }
 
     #[test]
     fn to_empty_dir() {
-        let c = TestConfig::new("destb", None);
+        let c = TestConfig::new("destfb", None);
         let num_files = c.get_src().read_dir().unwrap().count();
         let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
         let copied = task::block_on(handle).unwrap();
