@@ -76,16 +76,8 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
 }
 
 fn trim(v: &[u8]) -> Option<Vec<u8>> {
-    let mut v: Vec<u8> = v
-        .iter()
-        .filter(|v| *v != &b' ' && *v != &b'.')
-        .copied()
-        .collect();
-    if !v.is_empty() && v[0] == b'.' {
-        v = v[1..].to_vec();
-    }
     if !v.is_empty() {
-        Some(v)
+        Some(v.to_vec())
     } else {
         None
     }

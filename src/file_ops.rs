@@ -147,11 +147,8 @@ async fn process_file(
 ) -> Result<()> {
     match path.file_name() {
         Some(filename) => {
-            let ext = path.extension();
-            if let Some(ext) = ext {
-                if !skip_set.is_empty() && skip_set.iter().any(|re| re.is_match(ext.to_str().unwrap())) {
-                    return Ok(());
-                }
+            if !skip_set.is_empty() && skip_set.iter().any(|re| re.is_match(path.to_str().unwrap())) {
+                return Ok(());
             }
             let dest_path = dest.join(filename);
             match dest_path.exists().await {
