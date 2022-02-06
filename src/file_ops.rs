@@ -1,6 +1,5 @@
 use std::io::Result;
 use std::ops::AddAssign;
-use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
 use async_std::fs;
@@ -15,10 +14,10 @@ const MODIFY: &str = "update";
 
 #[derive(Debug, Default)]
 pub(crate) struct Summary {
-    pub copied: usize,
+    pub new: usize,
+    pub existing: usize,
+    pub updated: usize,
     pub errors: usize,
-    pub modified: usize,
-    pub untouched: usize,
     pub total: usize,
 }
 
@@ -31,10 +30,10 @@ impl Summary {
             } else {
                 match id {
                     COPY => {
-                        self.copied += 1;
+                        self.new += 1;
                     }
                     MODIFY => {
-                        self.modified += 1;
+                        self.updated += 1;
                     }
                     _ => unreachable!(),
                 }
@@ -46,10 +45,10 @@ impl Summary {
 
 impl AddAssign for Summary {
     fn add_assign(&mut self, rhs: Self) {
-        self.copied += rhs.copied;
+        self.new += rhs.new;
         self.errors += rhs.errors;
-        self.modified += rhs.modified;
-        self.untouched += rhs.untouched;
+        self.updated += rhs.updated;
+        self.existing += rhs.existing;
         self.total += rhs.total;
     }
 }
@@ -150,7 +149,7 @@ async fn process_file(
         Some(filename) => {
             let ext = path.extension();
             if let Some(ext) = ext {
-                if !skip_set.is_empty() && skip_set.contains(ext.as_bytes()) {
+                if !skip_set.is_empty() && skip_set.iter().any(|re| re.is_match(ext.to_str().unwrap())) {
                     return Ok(());
                 }
             }
@@ -162,7 +161,7 @@ async fn process_file(
                     {
                         update_file(path, &dest_path, MODIFY, verbose, handles).await;
                     } else {
-                        summary.untouched += 1;
+                        summary.existing += 1;
                     }
                 }
                 false => {
@@ -227,10 +226,11 @@ mod test {
         let c = TestConfig::new("destb", None);
         let num_files = c.get_src().read_dir().unwrap().count();
         let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
-        let copied = task::block_on(handle);
-        assert_eq!(copied.unwrap().copied, num_files);
+        let copied = task::block_on(handle).unwrap();
+        assert_eq!(copied.new, num_files);
         let handle = task::spawn(copy(c.get_src(), c.get_dest(), None, true));
-        let copied = task::block_on(handle);
-        assert_eq!(copied.unwrap().copied, 0);
+        let copied = task::block_on(handle).unwrap();
+        assert_eq!(copied.new, 0);
+        assert_eq!(copied.existing, num_files);
     }
 }

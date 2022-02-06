@@ -1,9 +1,10 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::PathBuf;
+use regex::Regex;
 
 pub(crate) type FromPath = PathBuf;
 pub(crate) type ToPath = PathBuf;
-pub(crate) type SkipExt = HashSet<Vec<u8>>;
+pub(crate) type SkipExt = Vec<Regex>;
 
 pub(crate) type CopyDirections = HashMap<(FromPath, ToPath), SkipExt>;
 
@@ -65,6 +66,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
                 .split(|v| *v == b',')
                 .filter_map(trim)
                 .into_iter()
+                .map(|v| Regex::new(std::str::from_utf8(&v).unwrap()).unwrap())
                 .collect();
         }
         out.insert((from_path, to_path), skip_exts);
@@ -91,14 +93,12 @@ fn trim(v: &[u8]) -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashSet;
     use std::path::PathBuf;
 
     use crate::copy_directions::from_string_list;
 
     static PRE: &str = "/home/user/pre";
     static POST: &str = "/home/user/post";
-    static ARGS: &str = ".txt,.aln, .ttt";
 
     fn to(val: &str) -> PathBuf {
         PathBuf::from(val)
@@ -113,21 +113,5 @@ mod test {
         let id = &(pre.clone(), post.clone());
         assert!(parsed_directions.contains_key(id));
         assert!(parsed_directions.get(id).unwrap().is_empty());
-    }
-
-    #[test]
-    fn with_args() {
-        let copy_directions = vec![format!("{}:{}:{}", PRE, POST, ARGS).as_bytes().to_vec()];
-        let parsed_directions = from_string_list(copy_directions).unwrap();
-        let pre = &to(PRE);
-        let post = &to(POST);
-        let id = &(pre.clone(), post.clone());
-        assert!(parsed_directions.contains_key(id));
-        let args = parsed_directions.get(id).unwrap().clone();
-        let mut expected = HashSet::new();
-        expected.insert("ttt".as_bytes().to_vec());
-        expected.insert("txt".as_bytes().to_vec());
-        expected.insert("aln".as_bytes().to_vec());
-        assert!(expected.len() == args.len() && args.iter().all(|v| expected.contains(v)));
     }
 }
