@@ -14,6 +14,7 @@ use crate::executor::execute;
 mod copy_directions;
 mod executor;
 mod file_ops;
+mod summary;
 mod test_utils;
 
 #[cfg(not(tarpaulin_include))]
@@ -22,8 +23,8 @@ fn main() {
         (version: "0.1.0")
         (author: "Chris N. <christopher.neely1200@gmail.com>")
         (about: "Quick file copier")
-        (@arg INPUT_FILE: -i --input_file +takes_value +required "File with command lines in format 'FROM:TO[:skip_ext[,...]]'")
-        (@arg VERBOSE: -v --verbose "Display files copied")
+        (@arg INPUT_FILE: -i --input_file +takes_value +required "File with command lines in format\n'FROM:TO[:skip-pattern[,...]]'")
+        (@arg VERBOSE: -v --verbose "Display file paths as they are copied")
     )
     .get_matches();
 
@@ -43,7 +44,10 @@ fn main() {
         .lines()
         .map(|l| l.unwrap())
         .map(|v| v.as_bytes().to_vec())
+        // Skip empty lines
         .filter(|v| !v.is_empty())
+        // Skip lines starting with # - comment lines
+        .filter(|v| v[0] != b'#')
         .collect();
     let command_list = match from_string_list(command_strings) {
         Ok(c) => c,

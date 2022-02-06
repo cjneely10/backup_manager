@@ -1,7 +1,8 @@
 use async_std::task::{block_on, spawn};
 
 use crate::copy_directions::CopyDirections;
-use crate::file_ops::{copy, Summary};
+use crate::file_ops::copy;
+use crate::summary::Summary;
 
 /// Initialize copier pool for each direction tuple and begin copy process
 pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Summary {

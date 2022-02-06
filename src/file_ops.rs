@@ -1,5 +1,4 @@
 use std::io::Result;
-use std::ops::AddAssign;
 use std::path::Path;
 
 use async_std::fs;
@@ -8,53 +7,10 @@ use async_std::stream::StreamExt;
 use async_std::task::{spawn_local, yield_now, JoinHandle};
 
 use crate::copy_directions::SkipPatterns;
+use crate::summary::Summary;
 
-const COPY: &str = "copy";
-const MODIFY: &str = "update";
-
-#[derive(Debug, Default)]
-pub(crate) struct Summary {
-    pub new: usize,
-    pub existing: usize,
-    pub updated: usize,
-    pub errors: usize,
-    pub total: usize,
-}
-
-impl Summary {
-    pub(crate) async fn summarize(
-        mut self,
-        handles: Vec<JoinHandle<(&'static str, bool)>>,
-    ) -> Self {
-        for handle in handles {
-            let (id, status) = handle.await;
-            if !status {
-                self.errors += 1;
-            } else {
-                match id {
-                    COPY => {
-                        self.new += 1;
-                    }
-                    MODIFY => {
-                        self.updated += 1;
-                    }
-                    _ => unreachable!(),
-                }
-            }
-        }
-        self
-    }
-}
-
-impl AddAssign for Summary {
-    fn add_assign(&mut self, rhs: Self) {
-        self.new += rhs.new;
-        self.errors += rhs.errors;
-        self.updated += rhs.updated;
-        self.existing += rhs.existing;
-        self.total += rhs.total;
-    }
-}
+pub(crate) const COPY: &str = "copy";
+pub(crate) const MODIFY: &str = "update";
 
 /// Recursively clone directory
 ///
