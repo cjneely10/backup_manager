@@ -22,7 +22,7 @@ fn main() {
         (version: "0.1.0")
         (author: "Chris N. <christopher.neely1200@gmail.com>")
         (about: "Quick file copier")
-        (@arg INPUT_FILE: -i --input_file +takes_value +required "File with command lines in format 'FROM:TO:[skip_ext[,...]]'")
+        (@arg INPUT_FILE: -i --input_file +takes_value +required "File with command lines in format 'FROM:TO[:skip_ext[,...]]'")
         (@arg VERBOSE: -v --verbose "Display files copied")
     )
     .get_matches();

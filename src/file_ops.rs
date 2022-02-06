@@ -18,6 +18,7 @@ pub(crate) struct Summary {
     pub copied: usize,
     pub errors: usize,
     pub modified: usize,
+    pub untouched: usize,
     pub total: usize,
 }
 
@@ -26,6 +27,7 @@ impl AddAssign for Summary {
         self.copied += rhs.copied;
         self.errors += rhs.errors;
         self.modified += rhs.modified;
+        self.untouched += rhs.untouched;
         self.total += rhs.total;
     }
 }
@@ -100,8 +102,7 @@ where
             match entry {
                 None => break,
                 Some(entry) => {
-                    let entry = entry.unwrap();
-                    let path = entry.path();
+                    let path = entry.unwrap().path();
                     if path.is_dir().await {
                         stack.push(path);
                     } else {
@@ -154,6 +155,8 @@ async fn process_file(
                         < path.metadata().await?.modified()?
                     {
                         update_file(path, &dest_path, MODIFY, verbose, handles).await;
+                    } else {
+                        summary.untouched += 1;
                     }
                 }
                 false => {
