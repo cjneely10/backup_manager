@@ -22,6 +22,28 @@ pub(crate) struct Summary {
     pub total: usize,
 }
 
+impl Summary {
+    pub(crate) async fn summarize(mut self, handles: Vec<JoinHandle<(&'static str, bool)>>) -> Self {
+        for handle in handles {
+            let (id, status) = handle.await;
+            if !status {
+                self.errors += 1;
+            } else {
+                match id {
+                    COPY => {
+                        self.copied += 1;
+                    }
+                    MODIFY => {
+                        self.modified += 1;
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+        self
+    }
+}
+
 impl AddAssign for Summary {
     fn add_assign(&mut self, rhs: Self) {
         self.copied += rhs.copied;
@@ -113,23 +135,7 @@ where
             }
         }
     }
-    for handle in handles {
-        let (id, status) = handle.await;
-        if !status {
-            summary.errors += 1;
-        } else {
-            match id {
-                COPY => {
-                    summary.copied += 1;
-                }
-                MODIFY => {
-                    summary.modified += 1;
-                }
-                _ => unreachable!(),
-            }
-        }
-    }
-    Ok(summary)
+    Ok(summary.summarize(handles).await)
 }
 
 async fn process_file(
