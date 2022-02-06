@@ -22,7 +22,10 @@ pub(crate) struct Summary {
 }
 
 impl Summary {
-    pub(crate) async fn summarize(mut self, handles: Vec<JoinHandle<(&'static str, bool)>>) -> Self {
+    pub(crate) async fn summarize(
+        mut self,
+        handles: Vec<JoinHandle<(&'static str, bool)>>,
+    ) -> Self {
         for handle in handles {
             let (id, status) = handle.await;
             if !status {
@@ -147,7 +150,11 @@ async fn process_file(
 ) -> Result<()> {
     match path.file_name() {
         Some(filename) => {
-            if !skip_set.is_empty() && skip_set.iter().any(|re| re.is_match(path.to_str().unwrap())) {
+            if !skip_set.is_empty()
+                && skip_set
+                    .iter()
+                    .any(|re| re.is_match(path.to_str().unwrap()))
+            {
                 return Ok(());
             }
             let dest_path = dest.join(filename);
@@ -181,7 +188,7 @@ async fn file_copy_runner(from: PathBuf, to: PathBuf, id: &'static str) -> (&'st
         Err(e) => {
             eprintln!("{}", e);
             (id, false)
-        },
+        }
     }
 }
 
