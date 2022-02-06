@@ -4,9 +4,9 @@ use regex::Regex;
 
 pub(crate) type FromPath = PathBuf;
 pub(crate) type ToPath = PathBuf;
-pub(crate) type SkipExt = Vec<Regex>;
+pub(crate) type SkipPatterns = Vec<Regex>;
 
-pub(crate) type CopyDirections = HashMap<(FromPath, ToPath), SkipExt>;
+pub(crate) type CopyDirections = HashMap<(FromPath, ToPath), SkipPatterns>;
 
 #[derive(Debug)]
 pub(crate) struct FileParseError {
@@ -20,7 +20,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
         let mut direction = directions.split(|v| *v == b':');
         let from_path: PathBuf;
         let to_path: PathBuf;
-        let mut skip_exts = SkipExt::new();
+        let mut skip_exts = SkipPatterns::new();
         match direction.next() {
             Some(direction) => {
                 from_path = PathBuf::from(&String::from_utf8(Vec::from(direction)).unwrap());

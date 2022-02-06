@@ -9,6 +9,14 @@ pub(crate) fn execute(directions: CopyDirections, verbose: bool) -> Summary {
 }
 
 async fn run(directions: CopyDirections, verbose: bool) -> Summary {
+    directions.iter().for_each(|(paths, exclusions)| {
+       print!("{} -> {}", paths.0.to_str().unwrap(), paths.1.to_str().unwrap());
+        if !exclusions.is_empty() {
+            println!(", excluding {:?}", exclusions);
+        } else {
+            println!();
+        }
+    });
     let mut handles = Vec::new();
     let mut total = Summary::default();
     for (paths, cfg) in directions {

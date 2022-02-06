@@ -7,7 +7,7 @@ use async_std::path::PathBuf;
 use async_std::stream::StreamExt;
 use async_std::task::{spawn_local, yield_now, JoinHandle};
 
-use crate::copy_directions::SkipExt;
+use crate::copy_directions::SkipPatterns;
 
 const COPY: &str = "copy";
 const MODIFY: &str = "update";
@@ -60,7 +60,7 @@ impl AddAssign for Summary {
 pub(crate) async fn copy<U, V>(
     from: U,
     to: V,
-    skip_set: Option<SkipExt>,
+    skip_set: Option<SkipPatterns>,
     verbose: bool,
 ) -> Result<Summary>
 where
@@ -71,7 +71,7 @@ where
     assert!(from.as_ref().exists(), "Input directory not found");
     assert!(from.as_ref().is_dir(), "Input path is not a directory");
     let mut stack = vec![PathBuf::from(from.as_ref())];
-    let empty = SkipExt::new();
+    let empty = SkipPatterns::new();
     let skip_set = match skip_set {
         Some(s) => s,
         None => empty,
@@ -141,7 +141,7 @@ async fn process_file(
     summary: &mut Summary,
     path: &PathBuf,
     dest: &PathBuf,
-    skip_set: &SkipExt,
+    skip_set: &SkipPatterns,
     verbose: bool,
     handles: &mut Vec<JoinHandle<(&str, bool)>>,
 ) -> Result<()> {
