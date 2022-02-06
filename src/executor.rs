@@ -33,8 +33,8 @@ async fn run(directions: CopyDirections, verbose: bool) -> Summary {
     }
     for handle in handles {
         match handle.await {
-            Ok(count) => {
-                total += count;
+            Ok(summary) => {
+                total += summary;
             }
             Err(e) => {
                 eprintln!("{}", e)

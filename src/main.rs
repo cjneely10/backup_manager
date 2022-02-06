@@ -29,12 +29,11 @@ fn main() {
     .get_matches();
 
     let verbose = matches.is_present("VERBOSE");
-    let file = matches.value_of("INPUT_FILE").unwrap();
-    let file = File::open(file);
-    let file = match file {
+    let input_file = matches.value_of("INPUT_FILE").unwrap();
+    let file = match File::open(input_file) {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("Unable to parse file!");
+            eprintln!("Input file \"{}\" not found!", input_file);
             eprintln!("{:?}", e);
             exit(1);
         }
