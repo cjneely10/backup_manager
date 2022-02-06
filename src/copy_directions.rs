@@ -18,6 +18,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
     let mut out = HashMap::new();
     let mut claimed_out_dirs: HashMap<PathBuf, PathBuf> = HashMap::new();
     for directions in data {
+        assert_ne!(directions.len(), 0);
         let mut direction = directions.split(|v| *v == b':');
         let from_path: PathBuf;
         let to_path: PathBuf;
@@ -34,14 +35,7 @@ pub(crate) fn from_string_list(data: Vec<Vec<u8>>) -> Result<CopyDirections, Fil
                     });
                 }
             }
-            None => {
-                return Err(FileParseError {
-                    message: format!(
-                        "Unable to parse `from_path` in string \"{}\"",
-                        String::from_utf8(directions.clone()).unwrap()
-                    ),
-                });
-            }
+            None => unreachable!(),
         }
         match direction.next() {
             Some(direction) => {
