@@ -1,2 +1,5 @@
 /target
 .idea
+dest*
+examples.err
+examples.log

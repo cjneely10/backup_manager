@@ -58,6 +58,7 @@ done
 # https://stackoverflow.com/questions/59895/how-can-i-get-the-source-directory-of-a-bash-script-from-within-the-script-itsel
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 bin="${script_dir:?}/target/release/backup_manager"
+[[ ! -f "$bin" ]] && { echo "Unable to locate compiled 'backup_manager' program" ; exit 2 ; }
 # Datetime
 current_date=$(date)
 echo "$current_date" >> "${log:?}"
