@@ -23,6 +23,12 @@ cargo build --release
 
 ## Usage from binary (without shell script)
 
+```shell
+./target/release/backup_manager -i example.bkm >> example.log 2>> example.err
+```
+
+## Help menu
+
 ```text
 backup_manager 0.1.0
 Chris N. <christopher.neely1200@gmail.com>
