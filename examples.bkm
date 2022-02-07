@@ -1,0 +1,5 @@
+# Duplicate source directory twice
+src:dest
+src:dest2
+# Will create empty directory
+src:dest3:.rs
