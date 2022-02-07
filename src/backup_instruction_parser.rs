@@ -88,7 +88,7 @@ fn trim(v: &[u8]) -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod test {
-    use crate::copy_directions::from_string_list;
+    use crate::backup_instruction_parser::from_string_list;
     use crate::test_utils::test_config::TestConfig;
 
     #[test]

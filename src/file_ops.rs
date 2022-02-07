@@ -6,7 +6,7 @@ use async_std::path::PathBuf;
 use async_std::stream::StreamExt;
 use async_std::task::{spawn_local, yield_now, JoinHandle};
 
-use crate::copy_directions::SkipPatterns;
+use crate::backup_instruction_parser::SkipPatterns;
 use crate::summary::Summary;
 
 pub(crate) const COPY: &str = "copy";

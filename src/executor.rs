@@ -1,6 +1,6 @@
 use async_std::task::{block_on, spawn};
 
-use crate::copy_directions::CopyDirections;
+use crate::backup_instruction_parser::CopyDirections;
 use crate::file_ops::copy;
 use crate::summary::Summary;
 

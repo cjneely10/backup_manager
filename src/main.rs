@@ -8,10 +8,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::process::exit;
 
-use crate::copy_directions::from_string_list;
+use crate::backup_instruction_parser::from_string_list;
 use crate::executor::execute;
 
-mod copy_directions;
+mod backup_instruction_parser;
 mod executor;
 mod file_ops;
 mod summary;
