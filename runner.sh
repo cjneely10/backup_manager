@@ -17,48 +17,42 @@ function help_menu() {
   echo ""
 }
 
-# Parse arguments
-function parse_args() {
-  PARAMS=""
-  while [[ $# -gt 0 ]]; do
-    key="$1"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -b|--bkm-file)
+      bkm="$2"
+      [ ! -f "${bkm:?}" ] && echo -e ".bkm file not found" && exit 1
+      shift
+      shift
+      ;;
+    -l|--log-file)
+      log="$2"
+      shift
+      shift
+      ;;
+    -e|--err-file)
+      err="$2"
+      shift
+      shift
+      ;;
+    -h|--help)
+      help_menu
+      exit 0
+      ;;
+    -*)
+      echo -e "Error: Unsupported flag $1" >&2
+      help_menu
+      exit 1
+      ;;
+    *)
+      echo -e "Error: Unsupported argument $1" >&2
+      help_menu
+      exit 1
+      ;;
+  esac
+done
 
-    case $key in
-      -b|--bkm-file)
-        bkm="$2"
-        [ ! -f "${bkm:?}" ] && echo -e ".bkm file not found" && exit 1
-        shift
-        shift
-        ;;
-      -l|--log-file)
-        log="$2"
-        shift
-        shift
-        ;;
-      -e|--err-file)
-        err="$2"
-        shift
-        shift
-        ;;
-
-      -h|--help)
-        help_menu
-        exit 0
-        ;;
-      -*)
-        echo -e "Error: Unsupported flag $1" >&2
-        help_menu
-        exit 1
-        ;;
-      *)
-        echo -e "Error: Unsupported argument $1" >&2
-        help_menu
-        exit 1
-        ;;
-    esac
-  done
-  eval set -- "${PARAMS}"
-}
+[[ -z "${log}" || -z "${err}" || -z "${bkm}" ]] && { help_menu ; exit 1 ; }
 
 # Path to binary. Implementation from
 # https://stackoverflow.com/questions/59895/how-can-i-get-the-source-directory-of-a-bash-script-from-within-the-script-itsel
@@ -66,10 +60,10 @@ script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 bin="${script_dir:?}/target/release/backup_manager"
 # Datetime
 current_date=$(date)
-echo "${current_date:?}" >> "${log:?}"
+echo "$current_date" >> "${log:?}"
 echo "$current_date" >> "${err:?}"
 # Run backup and log output/errors
-$bin -i "$bkm" >> "$log" 2>> "$err"
+$bin -i "${bkm:?}" >> "$log" 2>> "$err"
 # Extra blank line for ease in reading
 echo "" >> "$log"
 echo "" >> "$err"
