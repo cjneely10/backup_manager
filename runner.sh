@@ -3,6 +3,9 @@ set -e
 
 # This script is useful for setting up a simple cron-job. This script is meant to live within the top-level directory
 # of this repository, but can be called from any location.
+# This script assumes that the 'backup_manager' crate has been compiled in release mode
+
+binary="target/release/backup_manager"
 
 function help_menu() {
   echo ""
@@ -57,7 +60,7 @@ done
 # Path to binary. Implementation from
 # https://stackoverflow.com/questions/59895/how-can-i-get-the-source-directory-of-a-bash-script-from-within-the-script-itsel
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-bin="${script_dir:?}/target/release/backup_manager"
+bin="${script_dir:?}/${binary:?}"
 [[ ! -f "$bin" ]] && { echo "Unable to locate compiled 'backup_manager' program" ; exit 2 ; }
 # Datetime
 current_date=$(date)
