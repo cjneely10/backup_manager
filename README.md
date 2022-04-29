@@ -5,7 +5,7 @@ If you're like me, you've lost scores of files over the years due to improperly 
 After the most recent occurrence, I decided to write a very simple backup tool for creating redundant copies
 of my file system.
 
-This crate is very early in its development, and I am not sure how much more it will be developed from here.
+This crate is functional, and I am not sure how much more it will be developed from here.
 
 ## Installation
 
